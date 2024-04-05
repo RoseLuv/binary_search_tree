@@ -1,16 +1,28 @@
 import tkinter as tk
 import turtle as trl
 
+LEFT = False
+RIGHT = True
+
 class Node():
-    def __init__(self, key: int | None) -> None:
+    def __init__(self, key: int | None, x: int, y: int) -> None:
         self.left: Node | None = None
         self.right: Node | None = None
         self.key: int | None = key
-        self.coord: tuple[int,int] | None = None
+        self.coord: tuple[int,int] | None = (x, y)
+        self.depth = 0
 
 class Tree():
     def __init__(self, node: Node | None) -> None:
         self.tree_root = node
+
+def calc_coord(coord, direction: bool, depth:int):
+    if direction:
+        return (coord[0] + 150, coord[1] + (50 * depth))
+    return (coord[0] - 150, coord[1] + (50 * depth))
+
+def draw_node(canvas: tk.Canvas, x, y) -> None:
+    canvas.create_oval(x-20, y-20, x+20, y+20)
 
 def search(cur_node: Node | None, value) -> bool:
     if cur_node == None:
@@ -21,29 +33,39 @@ def search(cur_node: Node | None, value) -> bool:
 
     return search(cur_node.left) if value < cur_node.key else\
            search(cur_node.right)
-    
-def input(cur_node: Node, value: int, tree: Tree) -> None:
+
+def input(cur_node: Node, value: int, tree: Tree, canvas: tk.Canvas) -> None:
     if cur_node.key == None:
-        tree.tree_root = Node(value)
+        tree.tree_root.key = value
+        tree.tree_root.depth = 0
+        draw_node(canvas, tree.tree_root.coord[0],tree.tree_root.coord[1])
         return
 
     if cur_node.key == value:
         print("Invalid input, key already in tree.")
         return 
 
-    if cur_node.key < value:
+    print(cur_node.key)
+    if cur_node.key > value:
         if cur_node.left == None:
-            cur_node.left = Node(value)
+            x, y = calc_coord(cur_node.coord, LEFT, cur_node.depth + 1)
+            cur_node.left = Node(value, x, y)
+            cur_node.left.depth = cur_node.depth + 1
+            print(cur_node.left.depth)
+            draw_node(canvas, cur_node.left.coord[0], cur_node.left.coord[1])
             return
 
-        input(cur_node.left, value)
+        input(cur_node.left, value, tree, canvas)
         return
 
     if cur_node.right == None:
-        cur_node.right = Node(value)
+        x, y = calc_coord(cur_node.coord, RIGHT, cur_node.depth + 1)
+        cur_node.right = Node(value, x, y)
+        cur_node.right.depth = cur_node.depth + 1
+        draw_node(canvas, cur_node.right.coord[0], cur_node.right.coord[1])
         return
 
-    input(cur_node.right, value)
+    input(cur_node.right, value, tree, canvas)
     return
 
 def find_min(cur_node: Node) -> Node | None:
@@ -84,18 +106,20 @@ def delete(cur_node: Node, value: int, tree: Tree | None,) -> None:
 def list_to_int(input_str:str) -> int | None:
     if input_str == '':
         return 
-    # Mypy: cannot access local variable 'i' where it is not associated with a value
-    i = 0
-    result = 0
+    if input_str[0] == '-':
+        return to_int(input_str[:1])
     input_str = input_str[::-1]
-    for i in range(len(input_str) - 1):
-        result += int(input_str[i]) * (10 ** i)
-    print(i)
-    return (result * (-1)) if input_str[i] == '-' else (result + int(input_str[i]) * (10 ** i))
+    return to_int(input_str)
 
+def to_int(input_str):
+    result = 0
+    for i in range(len(input_str) - 1, -1 ,-1):
+        print("I:" , i)
+        result += int(input_str[i]) * (10 ** i)
+    return result
 
 def main_func():
-    tree = Tree(Node(None))
+    tree = Tree(Node(None, 500, 50))
     root = tk.Tk()
     root.geometry("%dx%d" % (root.winfo_screenwidth(), root.winfo_screenheight()))
 
@@ -106,12 +130,15 @@ def main_func():
     input_box = tk.Text(top_frame, font=("Arial", 20), borderwidth=2, relief="solid", height=1, width=15)
     input_box.grid(padx=15, pady=15, column=1, row=0, columnspan=5)
 
-    tk.Button(top_frame, text="Input", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :input(tree.tree_root,(list_to_int(input_box.get("1.0","end-1c"))),tree)).grid( row=1, column=0, sticky="w", padx=15, pady=15)
-    tk.Button(top_frame, text="Search", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :search(tree.tree_root,(list_to_int(input_box.get("1.0","end-1c"))))).grid(row=1, column=1, sticky="w", padx=15, pady=15)
-    tk.Button(top_frame, text="Delete", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :delete(tree.tree_root,(list_to_int(input_box.get("1.0","end-1c"))), tree)).grid(row=2, column=0, sticky="w", padx=15, pady=15)
-
     main_canvas = tk.Canvas(root, height=800, width=1000, relief="solid", background="white", borderwidth=2)
     main_canvas.place(x=500,y=0)
+
+
+    tk.Button(top_frame, text="Input", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :input(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")),tree, main_canvas)).grid( row=1, column=0, sticky="w", padx=15, pady=15)
+    tk.Button(top_frame, text="Search", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :search(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")), main_canvas)).grid(row=1, column=1, sticky="w", padx=15, pady=15)
+    tk.Button(top_frame, text="Delete", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :delete(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")), tree, main_canvas)).grid(row=2, column=0, sticky="w", padx=15, pady=15)
+
+
     
     root.mainloop()
 
