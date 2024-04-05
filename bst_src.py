@@ -1,3 +1,6 @@
+import tkinter as tk
+import turtle as trl
+
 class Node():
     def __init__(self, key) -> None:
         self.left: Node | None = None
@@ -58,4 +61,27 @@ def find_pred(cur_node: Node) -> Node | None:
         return None
     return find_max(cur_node.left)
 
+#TODO FINISH DELETE
+def delete(cur_node: Node, tree: Tree | None, value: int) -> None:
+    if tree == None:
+        print("Invalid, nothing to delete")
+        return
+    if cur_node.left.key == value:
+        cur_node.left = find_succ(cur_node.left)
+        return
+    if cur_node.right.key == value:
+        cur_node.right = find_pred(cur_node.right)
+        return
+    if cur_node.key == value:
+        tree.tree_root = find_succ(cur_node)
 
+
+
+
+
+def main_func():
+    root = tk.Tk()
+    
+    root.mainloop()
+
+main_func()
