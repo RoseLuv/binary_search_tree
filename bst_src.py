@@ -1,8 +1,10 @@
 import tkinter as tk
 import turtle as trl
-
+from math import sqrt
 LEFT = False
 RIGHT = True
+
+#TODO IF DEPTH % 3 INCREASE THE DIFFERENCE IN X
 
 class Node():
     def __init__(self, key: int | None, x: int, y: int) -> None:
@@ -18,11 +20,12 @@ class Tree():
 
 def calc_coord(coord, direction: bool, depth:int):
     if direction:
-        return (coord[0] + 150, coord[1] + (50 * depth))
-    return (coord[0] - 150, coord[1] + (50 * depth))
+        return (coord[0] + 250 / depth, coord[1] + (50 * depth * 0.9))
+    return (coord[0] - 250 / depth, coord[1] + (50 * depth * 0.9))
 
-def draw_node(canvas: tk.Canvas, x, y) -> None:
+def draw_node(canvas: tk.Canvas, x, y, value: int) -> None:
     canvas.create_oval(x-20, y-20, x+20, y+20)
+    canvas.create_text(x, y, text = str(value))
 
 def search(cur_node: Node | None, value) -> bool:
     if cur_node == None:
@@ -38,21 +41,21 @@ def input(cur_node: Node, value: int, tree: Tree, canvas: tk.Canvas) -> None:
     if cur_node.key == None:
         tree.tree_root.key = value
         tree.tree_root.depth = 0
-        draw_node(canvas, tree.tree_root.coord[0],tree.tree_root.coord[1])
+        draw_node(canvas, tree.tree_root.coord[0],tree.tree_root.coord[1], value)
         return
 
     if cur_node.key == value:
         print("Invalid input, key already in tree.")
         return 
 
-    print(cur_node.key)
+    
     if cur_node.key > value:
         if cur_node.left == None:
             x, y = calc_coord(cur_node.coord, LEFT, cur_node.depth + 1)
             cur_node.left = Node(value, x, y)
             cur_node.left.depth = cur_node.depth + 1
-            print(cur_node.left.depth)
-            draw_node(canvas, cur_node.left.coord[0], cur_node.left.coord[1])
+            canvas.create_line(x + 20/sqrt(2), y - 20/sqrt(2), cur_node.coord[0] - 20/sqrt(2), cur_node.coord[1] + 20/sqrt(2))
+            draw_node(canvas, cur_node.left.coord[0], cur_node.left.coord[1], value)
             return
 
         input(cur_node.left, value, tree, canvas)
@@ -62,7 +65,8 @@ def input(cur_node: Node, value: int, tree: Tree, canvas: tk.Canvas) -> None:
         x, y = calc_coord(cur_node.coord, RIGHT, cur_node.depth + 1)
         cur_node.right = Node(value, x, y)
         cur_node.right.depth = cur_node.depth + 1
-        draw_node(canvas, cur_node.right.coord[0], cur_node.right.coord[1])
+        canvas.create_line(x - 20/sqrt(2), y - 20/sqrt(2), cur_node.coord[0] + 20/sqrt(2), cur_node.coord[1] + 20/sqrt(2))
+        draw_node(canvas, cur_node.right.coord[0], cur_node.right.coord[1], value)
         return
 
     input(cur_node.right, value, tree, canvas)
@@ -114,12 +118,11 @@ def list_to_int(input_str:str) -> int | None:
 def to_int(input_str):
     result = 0
     for i in range(len(input_str) - 1, -1 ,-1):
-        print("I:" , i)
         result += int(input_str[i]) * (10 ** i)
     return result
 
 def main_func():
-    tree = Tree(Node(None, 500, 50))
+    tree = Tree(Node(None, 650, 50))
     root = tk.Tk()
     root.geometry("%dx%d" % (root.winfo_screenwidth(), root.winfo_screenheight()))
 
@@ -130,7 +133,7 @@ def main_func():
     input_box = tk.Text(top_frame, font=("Arial", 20), borderwidth=2, relief="solid", height=1, width=15)
     input_box.grid(padx=15, pady=15, column=1, row=0, columnspan=5)
 
-    main_canvas = tk.Canvas(root, height=800, width=1000, relief="solid", background="white", borderwidth=2)
+    main_canvas = tk.Canvas(root, height=800, width=1300, relief="solid", background="white", borderwidth=2)
     main_canvas.place(x=500,y=0)
 
 
