@@ -20,12 +20,12 @@ class Tree():
 
 def calc_coord(coord, direction: bool, depth:int):
     if direction:
-        return (coord[0] + 250 / depth, coord[1] + (50 * depth * 0.9))
-    return (coord[0] - 250 / depth, coord[1] + (50 * depth * 0.9))
+        return (coord[0] + 250 / depth, coord[1] + (50 * (depth * 0.7)))
+    return (coord[0] - 250 / depth, coord[1] + (50 * (depth * 0.7)))
 
-def draw_node(canvas: tk.Canvas, x, y, value: int) -> None:
-    canvas.create_oval(x-20, y-20, x+20, y+20)
-    canvas.create_text(x, y, text = str(value))
+def draw_node(canvas: tk.Canvas, x, y, value: int, depth:int) -> None:
+    canvas.create_oval(x-20+depth, y-20+depth, x+20-depth, y+20-depth)
+    canvas.create_text(x, y, text = str(value), font=("Arial", 14 - depth))
 
 def search(cur_node: Node | None, value) -> bool:
     if cur_node == None:
@@ -41,7 +41,7 @@ def input(cur_node: Node, value: int, tree: Tree, canvas: tk.Canvas) -> None:
     if cur_node.key == None:
         tree.tree_root.key = value
         tree.tree_root.depth = 0
-        draw_node(canvas, tree.tree_root.coord[0],tree.tree_root.coord[1], value)
+        draw_node(canvas, tree.tree_root.coord[0],tree.tree_root.coord[1], value, 0)
         return
 
     if cur_node.key == value:
@@ -54,8 +54,8 @@ def input(cur_node: Node, value: int, tree: Tree, canvas: tk.Canvas) -> None:
             x, y = calc_coord(cur_node.coord, LEFT, cur_node.depth + 1)
             cur_node.left = Node(value, x, y)
             cur_node.left.depth = cur_node.depth + 1
-            canvas.create_line(x + 20/sqrt(2), y - 20/sqrt(2), cur_node.coord[0] - 20/sqrt(2), cur_node.coord[1] + 20/sqrt(2))
-            draw_node(canvas, cur_node.left.coord[0], cur_node.left.coord[1], value)
+            canvas.create_line(x + 20/sqrt(2) - cur_node.depth, y - 20/sqrt(2) + cur_node.depth, cur_node.coord[0] - 20/sqrt(2) + cur_node.depth, cur_node.coord[1] + 20/sqrt(2) - cur_node.depth)
+            draw_node(canvas, cur_node.left.coord[0], cur_node.left.coord[1], value, cur_node.left.depth)
             return
 
         input(cur_node.left, value, tree, canvas)
@@ -65,8 +65,8 @@ def input(cur_node: Node, value: int, tree: Tree, canvas: tk.Canvas) -> None:
         x, y = calc_coord(cur_node.coord, RIGHT, cur_node.depth + 1)
         cur_node.right = Node(value, x, y)
         cur_node.right.depth = cur_node.depth + 1
-        canvas.create_line(x - 20/sqrt(2), y - 20/sqrt(2), cur_node.coord[0] + 20/sqrt(2), cur_node.coord[1] + 20/sqrt(2))
-        draw_node(canvas, cur_node.right.coord[0], cur_node.right.coord[1], value)
+        canvas.create_line(x - 20/sqrt(2) + cur_node.depth, y - 20/sqrt(2) + cur_node.depth, cur_node.coord[0] + 20/sqrt(2) - cur_node.depth, cur_node.coord[1] + 20/sqrt(2) - cur_node.depth)
+        draw_node(canvas, cur_node.right.coord[0], cur_node.right.coord[1], value, cur_node.right.depth)
         return
 
     input(cur_node.right, value, tree, canvas)
@@ -140,7 +140,6 @@ def main_func():
     tk.Button(top_frame, text="Input", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :input(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")),tree, main_canvas)).grid( row=1, column=0, sticky="w", padx=15, pady=15)
     tk.Button(top_frame, text="Search", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :search(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")), main_canvas)).grid(row=1, column=1, sticky="w", padx=15, pady=15)
     tk.Button(top_frame, text="Delete", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :delete(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")), tree, main_canvas)).grid(row=2, column=0, sticky="w", padx=15, pady=15)
-
 
     
     root.mainloop()
