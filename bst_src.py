@@ -1,5 +1,4 @@
 import tkinter as tk
-import turtle as trl
 from math import sqrt
 LEFT = False
 RIGHT = True
@@ -112,7 +111,6 @@ def delete(value: int, cur_node: Node | None, tree: Tree) -> None:
     if cur_node.key == value:
         # No children
         if cur_node.left == None and cur_node.right == None:
-
             if cur_node.parent.left == cur_node:
                 cur_node.parent.left = None
             else:
@@ -121,12 +119,10 @@ def delete(value: int, cur_node: Node | None, tree: Tree) -> None:
         # Have two children
         elif cur_node.left != None and cur_node.right != None:
             successor = find_succ(cur_node)
-            if cur_node.parent.left == cur_node:
-                cur_node.parent.left = successor
-                # TODO SUCCESSOR PARENTS CHANGE
-            else:
-                # TODO SUCCESSOR PARENTS CHANGE
-                cur_node.parent.right = successor
+
+            cur_node.parent.left = successor
+            successor.parent.left = successor.right
+            successor.parent = cur_node.parent
 
         # Have 1 child
         elif cur_node.right != None:
@@ -137,7 +133,8 @@ def delete(value: int, cur_node: Node | None, tree: Tree) -> None:
             cur_node.parent.left = cur_node.left
             cur_node.parent.left.parent = cur_node.parent
     
-    destroy_node(cur_node)
+        destroy_node(cur_node)
+
 
 def destroy_node(cur_node: Node) -> None:
     cur_node.left = None
