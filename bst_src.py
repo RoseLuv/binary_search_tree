@@ -99,13 +99,26 @@ def find_pred(cur_node: Node) -> Node | None:
         return None
     return find_max(cur_node.left)
 
-def delete_search(value: int, cur_node: Node | None) -> None:
+def delete_search(value: int, cur_node: Node | None) -> Node | None:
+    """ 
+    This differs from search in the return value,
+    search returns bool, delete_search returns the 
+    node for later use in delete
+    """
+    if cur_node == None:
+        return None
+
     if cur_node.key == value:
         return cur_node
-    return
+    
+    if cur_node.key > value:
+        return delete_search(value, cur_node.left)
+    elif cur_node.key < value:
+        return delete_search(value, cur_node.right)
+
 
 #TODO FINISH DELETE | SUCCESSOR PARENTS CHANGE AND X Y CHANGE
-def delete(value: int, cur_node: Node | None, tree: Tree) -> None:
+def delete(value: int, cur_node: Node | None) -> None:
     # If only tree root left
     #if cur_node.parent == None:
     if cur_node.key == value:
@@ -119,7 +132,6 @@ def delete(value: int, cur_node: Node | None, tree: Tree) -> None:
         # Have two children
         elif cur_node.left != None and cur_node.right != None:
             successor = find_succ(cur_node)
-
             cur_node.parent.left = successor
             successor.parent.left = successor.right
             successor.parent = cur_node.parent
