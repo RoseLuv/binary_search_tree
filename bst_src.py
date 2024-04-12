@@ -12,7 +12,7 @@ class Node():
         self.right: Node | None = None
         self.key: int | None = key
         self.coord: tuple[int,int] | None = (x, y)
-        self.depth = 0
+        self.depth: int | None = 0
         self.parent: Node | None = None
 
 class Tree():
@@ -105,11 +105,10 @@ def delete_search(value: int, cur_node: Node | None) -> None:
         return cur_node
     return
 
-#TODO FINISH DELETE
+#TODO FINISH DELETE | SUCCESSOR PARENTS CHANGE AND X Y CHANGE
 def delete(value: int, cur_node: Node | None, tree: Tree) -> None:
     # If only tree root left
     #if cur_node.parent == None:
-
     if cur_node.key == value:
         # No children
         if cur_node.left == None and cur_node.right == None:
@@ -119,9 +118,7 @@ def delete(value: int, cur_node: Node | None, tree: Tree) -> None:
             else:
                 cur_node.parent.right = None
             
-            
-            return None
-        # Have to children
+        # Have two children
         elif cur_node.left != None and cur_node.right != None:
             successor = find_succ(cur_node)
             if cur_node.parent.left == cur_node:
@@ -130,11 +127,26 @@ def delete(value: int, cur_node: Node | None, tree: Tree) -> None:
             else:
                 # TODO SUCCESSOR PARENTS CHANGE
                 cur_node.parent.right = successor
-            return None 
 
         # Have 1 child
-        if cur_node.parent.left == cur_node:
-            cur_node.parent.left = cur_node.right
+        elif cur_node.right != None:
+            cur_node.parent.right = cur_node.right
+            cur_node.parent.right.parent = cur_node.parent
+
+        elif cur_node.left != None:
+            cur_node.parent.left = cur_node.left
+            cur_node.parent.left.parent = cur_node.parent
+    
+    destroy_node(cur_node)
+
+def destroy_node(cur_node: Node) -> None:
+    cur_node.left = None
+    cur_node.right = None
+    cur_node.key = None
+    cur_node.coord = None
+    cur_node.depth = None
+    cur_node.parent = None
+
 
 def list_to_int(input_str:str) -> int | None:
     if input_str == '':
