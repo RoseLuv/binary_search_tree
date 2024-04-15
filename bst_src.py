@@ -1,5 +1,6 @@
 import tkinter as tk
 from math import sqrt
+from random import randint
 LEFT = False
 RIGHT = True
 
@@ -66,7 +67,7 @@ def input(cur_node: Node, value: int, tree: Tree, canvas: tk.Canvas) -> None:
         x, y = calc_coord(cur_node.coord, RIGHT, cur_node.depth + 1)
         cur_node.right = Node(value, x, y)
         cur_node.right.depth = cur_node.depth + 1
-        cur_node.left.parent = cur_node
+        cur_node.right.parent = cur_node
         canvas.create_line(x - 20/sqrt(2) + cur_node.depth, y - 20/sqrt(2) + cur_node.depth, cur_node.coord[0] + 20/sqrt(2) - cur_node.depth, cur_node.coord[1] + 20/sqrt(2) - cur_node.depth)
         draw_node(canvas, cur_node.right.coord[0], cur_node.right.coord[1], value, cur_node.right.depth)
         return
@@ -113,12 +114,30 @@ def delete_search(value: int, cur_node: Node | None) -> Node | None:
     
     if cur_node.key > value:
         return delete_search(value, cur_node.left)
+
     elif cur_node.key < value:
         return delete_search(value, cur_node.right)
 
 
 #TODO FINISH DELETE | SUCCESSOR PARENTS CHANGE AND X Y CHANGE
-def delete(value: int, cur_node: Node | None) -> None:
+def delete(value: int, cur_node: Node | None, tree: Tree) -> None:
+    """
+        This is a really expensive function with O(n^2),
+        due to needing to remove all objects on the canvas,
+        and then redrawing them.
+
+        Possible solution: create a list with the nodes on the canvas for later deletion
+                           and then redrawing only the subtrees. Which would decrease the
+                           average complexity.
+                           
+                           Worst case: Redrawing the whole tree
+    """
+    to_delete = delete_search(tree.tree_root)
+    if to_delete == None:
+        # Nothing to delete
+        print("Invalid input, key not in tree")
+        return None
+    
     # If only tree root left
     #if cur_node.parent == None:
     if cur_node.key == value:
@@ -132,9 +151,18 @@ def delete(value: int, cur_node: Node | None) -> None:
         # Have two children
         elif cur_node.left != None and cur_node.right != None:
             successor = find_succ(cur_node)
-            cur_node.parent.left = successor
-            successor.parent.left = successor.right
-            successor.parent = cur_node.parent
+            if cur_node.parent.left == cur_node:
+                cur_node.parent.left = successor
+                successor.parent.left = successor.right
+                successor.parent = cur_node.parent
+            else: 
+                cur_node.parent.right = successor
+                # change original succ parents to succs child
+                successor.parent.left = successor.right
+                # successors childs parent
+                successor.right.parent = successor.parent
+
+            delete(value, tree.tree_root, tree)
 
         # Have 1 child
         elif cur_node.right != None:
@@ -171,6 +199,12 @@ def to_int(input_str):
         result += int(input_str[i]) * (10 ** i)
     return result
 
+def random_input(canvas: tk.Canvas, tree: Tree) -> None:
+    reps = randint(20,40)
+    for i in range(reps):
+        x = randint(0,100)
+        input(tree.tree_root, x, tree, canvas)
+
 def main_func():
     tree = Tree(Node(None, 650, 50))
     root = tk.Tk()
@@ -190,7 +224,7 @@ def main_func():
     tk.Button(top_frame, text="Input", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :input(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")),tree, main_canvas)).grid( row=1, column=0, sticky="w", padx=15, pady=15)
     tk.Button(top_frame, text="Search", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :search(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")), main_canvas)).grid(row=1, column=1, sticky="w", padx=15, pady=15)
     tk.Button(top_frame, text="Delete", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :delete(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")), tree, main_canvas)).grid(row=2, column=0, sticky="w", padx=15, pady=15)
-
+    tk.Button(top_frame, text="Random", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :random_input(main_canvas, tree)).grid(row=2, column=1, sticky="w", padx=15, pady=15)
     
     root.mainloop()
 
