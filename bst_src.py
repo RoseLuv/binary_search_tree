@@ -28,15 +28,15 @@ def draw_node(canvas: tk.Canvas, x, y, value: int, depth:int) -> None:
     canvas.create_oval(x-20+depth, y-20+depth, x+20-depth, y+20-depth)
     canvas.create_text(x, y, text = str(value), font=("Arial", 14 - depth))
 
-def search(cur_node: Node | None, value) -> bool:
-    if cur_node == None:
-        return False
-
+def search(cur_node: Node | None, value) -> Node | None:
     if cur_node.key == value:
-        return True
+        return cur_node
 
-    return search(cur_node.left) if value < cur_node.key else\
-           search(cur_node.right)
+    if cur_node == None:
+        return None
+
+    return search(cur_node.left, value) if value < cur_node.key else\
+           search(cur_node.right, value)
 
 def input(cur_node: Node, value: int, tree: Tree, canvas: tk.Canvas) -> None:
     if cur_node.key == None:
@@ -100,81 +100,74 @@ def find_pred(cur_node: Node) -> Node | None:
         return None
     return find_max(cur_node.left)
 
-def delete_search(value: int, cur_node: Node | None) -> Node | None:
-    """ 
-    This differs from search in the return value,
-    search returns bool, delete_search returns the 
-    node for later use in delete
-    """
-    if cur_node == None:
-        return None
-
-    if cur_node.key == value:
-        return cur_node
+def redraw(cur_node: Node, canvas: tk.Canvas) -> None:
+    if cur_node.left != None:
+        x, y = calc_coord(cur_node.coord, LEFT, cur_node.depth + 1)
+        cur_node.left.coord = (x, y)
+        cur_node.left.depth = cur_node.depth + 1
+        canvas.create_line(x + 20/sqrt(2) - cur_node.depth, y - 20/sqrt(2) + cur_node.depth, cur_node.coord[0] - 20/sqrt(2) + cur_node.depth, cur_node.coord[1] + 20/sqrt(2) - cur_node.depth)
+        draw_node(canvas, cur_node.left.coord[0], cur_node.left.coord[1], cur_node.left.key, cur_node.left.depth)
+        redraw(cur_node.left, canvas)
     
-    if cur_node.key > value:
-        return delete_search(value, cur_node.left)
+    if cur_node.right != None:
+        x, y = calc_coord(cur_node.coord, RIGHT, cur_node.depth + 1)
+        cur_node.right.coord = (x, y)
+        cur_node.right.depth = cur_node.depth + 1
+        canvas.create_line(x - 20/sqrt(2) + cur_node.depth, y - 20/sqrt(2) + cur_node.depth, cur_node.coord[0] + 20/sqrt(2) - cur_node.depth, cur_node.coord[1] + 20/sqrt(2) - cur_node.depth)
+        draw_node(canvas, cur_node.right.coord[0], cur_node.right.coord[1], cur_node.right.key, cur_node.right.depth)
+        redraw(cur_node.right, canvas)
 
-    elif cur_node.key < value:
-        return delete_search(value, cur_node.right)
+    return
 
+def transplant(tree: Tree, u: Node, v: Node) -> None:
+    if u.parent == None:
+        tree.tree_root = v
+        tree.tree_root.coord = (650, 50)
+    else:
+        if u == u.parent.left:
+            u.parent.left = v
+        else:
+            u.parent.right = v
+    if v != None:
+        v.parent = u.parent
+    return
 
-#TODO FINISH DELETE | SUCCESSOR PARENTS CHANGE AND X Y CHANGE
-def delete(value: int, cur_node: Node | None, tree: Tree) -> None:
+def delete(value: int, tree: Tree, canvas: tk.Canvas) -> None:
     """
         This is a really expensive function with O(n^2),
         due to needing to remove all objects on the canvas,
         and then redrawing them.
 
-        Possible solution: create a list with the nodes on the canvas for later deletion
-                           and then redrawing only the subtrees. Which would decrease the
-                           average complexity.
-                           
-                           Worst case: Redrawing the whole tree
+        Solution: "move" the nodes and change their x y coords and depth.
+        Problem: after moving and deleting the node, it also needs to delete the line connecting it.
+                       It can be fixed with creating a list that has tuples with the node.key and the line connecting it.
+                       TODO ^^^ 
     """
-    to_delete = delete_search(tree.tree_root)
+    to_delete: Node = search(tree.tree_root, value)
     if to_delete == None:
         # Nothing to delete
-        print("Invalid input, key not in tree")
+        print("Invalid input, value not in tree")
         return None
+
+    canvas.delete("all")
+    if to_delete.left == None:
+        transplant(tree, to_delete, to_delete.right)
+    else:
+        if to_delete.right == None:
+            transplant(tree, to_delete, to_delete.left)
+        else:
+            replacer = find_min(to_delete.right)
+            if replacer.parent != to_delete:
+                transplant(tree, replacer, replacer.right)
+                replacer.right = to_delete.right
+                to_delete.right.parent = replacer
+            transplant(tree, to_delete, replacer)
+            replacer.left = to_delete.left
+            to_delete.left.parent = replacer
     
-    # If only tree root left
-    #if cur_node.parent == None:
-    if cur_node.key == value:
-        # No children
-        if cur_node.left == None and cur_node.right == None:
-            if cur_node.parent.left == cur_node:
-                cur_node.parent.left = None
-            else:
-                cur_node.parent.right = None
-            
-        # Have two children
-        elif cur_node.left != None and cur_node.right != None:
-            successor = find_succ(cur_node)
-            if cur_node.parent.left == cur_node:
-                cur_node.parent.left = successor
-                successor.parent.left = successor.right
-                successor.parent = cur_node.parent
-            else: 
-                cur_node.parent.right = successor
-                # change original succ parents to succs child
-                successor.parent.left = successor.right
-                # successors childs parent
-                successor.right.parent = successor.parent
-
-            delete(value, tree.tree_root, tree)
-
-        # Have 1 child
-        elif cur_node.right != None:
-            cur_node.parent.right = cur_node.right
-            cur_node.parent.right.parent = cur_node.parent
-
-        elif cur_node.left != None:
-            cur_node.parent.left = cur_node.left
-            cur_node.parent.left.parent = cur_node.parent
-    
-        destroy_node(cur_node)
-
+    destroy_node(to_delete)
+    draw_node(canvas, 650, 50, tree.tree_root.key, 0)
+    redraw(tree.tree_root, canvas)
 
 def destroy_node(cur_node: Node) -> None:
     cur_node.left = None
@@ -223,7 +216,7 @@ def main_func():
 
     tk.Button(top_frame, text="Input", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :input(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")),tree, main_canvas)).grid( row=1, column=0, sticky="w", padx=15, pady=15)
     tk.Button(top_frame, text="Search", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :search(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")), main_canvas)).grid(row=1, column=1, sticky="w", padx=15, pady=15)
-    tk.Button(top_frame, text="Delete", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :delete(tree.tree_root,list_to_int(input_box.get("1.0","end-1c")), tree, main_canvas)).grid(row=2, column=0, sticky="w", padx=15, pady=15)
+    tk.Button(top_frame, text="Delete", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :delete(list_to_int(input_box.get("1.0","end-1c")), tree, main_canvas)).grid(row=2, column=0, sticky="w", padx=15, pady=15)
     tk.Button(top_frame, text="Random", font=("Arial", 20), relief="solid",borderwidth=2,height= 1, width=10, command=lambda :random_input(main_canvas, tree)).grid(row=2, column=1, sticky="w", padx=15, pady=15)
     
     root.mainloop()
